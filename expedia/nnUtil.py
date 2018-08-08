@@ -69,4 +69,4 @@ def load_dataset():
     return train_set_x_orig, train_set_y_orig, test_set_x_orig, test_set_y_orig, classes
 
 def load_dataset_csv(file):
-    return pd.read_csv(file)
+    return pd.read_csv(file,dtype=object)
