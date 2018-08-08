@@ -1,6 +1,7 @@
 import numpy as np
 import h5py
 import pandas as pd
+import math
 
 def linearForward(A,w,b):
     z=np.dot(A,w.T)+b.T
@@ -12,9 +13,37 @@ def linearActivationForward(z,activation):
     elif(activation=="Sigmoid"):
         return 1/(1+np.exp(-z))
 
-def computeCost(AL,Y):
+def forwardPropWithL2(X,y,parameters,layer_dims,lambd):
+    A={'0':X}
+    z={}
+    for l in range(0,len(layer_dims)):
+        z.update({str(l+1):linearForward(A[str(l)],parameters['w'+str(l+1)],parameters['b'+str(l+1)])})
+        if(l==len(layer_dims-1)):
+            A.update({str(l+1):linearActivationForward(z[str(l+1)],"Sigmoid")})
+        else:    
+            A.update({str(l+1):linearActivationForward(z[str(l+1)],"Relu")})
+            cost=computeCost(A[str(l+1)],y,parameters,lambd,layer_dims)
+    return A,z,cost
+
+def backwardPropWithL2(A,z,y,parameters,lambd,layer_dims):
+    dz={}
+    dw={}
+    db={}
+    da={}
+    daL=(-y/A[len(A)-1])+(1-y)/(1-A[len(A)-1])   
+    for l in range(reversed(len(layer_dims))):
+        if(l==len(layer_dims)):
+            dz[str(l)]=sigmoidBackward(daL,z[l])
+        else:
+            dz[str(l)]=reluBackward(daL,z[l])    
+        dw[str(l)],db[str(l)],da[str(l-1)]=linearBackward(dz[str(len(layer_dims))],A[str(l-1)],parameters['w'+str(l)],lambd)
+    return dw,db    
+
+def computeCost(AL,Y,parameters,lambd,layer_dims):
     m=Y.shape[0]
     cost=(-1/m)*np.sum(np.multiply(Y,np.log(AL))+np.multiply(1-Y,np.log(1-AL)))
+    for l in range(1,len(layer_dims+1)):
+        cost+=(lambd/2*m)*np.sum(np.square(parameters['w'+str(l)]))
     cost=np.squeeze(cost)
     assert(cost.shape==())
     return cost
@@ -29,9 +58,9 @@ def sigmoidBackward(da,z):
     dz=da*s*(1-s)
     return dz
 
-def linearBackward(dz,A_prev,w):
+def linearBackward(dz,A_prev,w,lambd):
     m=A_prev.shape[0]
-    dw=(1/m)*np.dot(A_prev.T,dz)
+    dw=(1/m)*np.dot(A_prev.T,dz)+(lambd/m)*w
     db=(1/m)*np.sum(dz,axis=0,keepdims=True)
     da_prev=dz.dot(w)
     return dw,db,da_prev
@@ -70,3 +99,19 @@ def load_dataset():
 
 def load_dataset_csv(file):
     return pd.read_csv(file,dtype=object)
+
+def initialize_parameters_deep(layer_dims):    
+    np.random.seed(3)
+    parameters = {}
+    L = len(layer_dims)            # number of layers in the network
+
+    for l in range(1, L):
+        ### START CODE HERE ### (≈ 2 lines of code)
+        parameters['w' + str(l)] = np.random.randn(layer_dims[l], layer_dims[l - 1]) * (1/math.sqrt(layer_dims[l]))
+        parameters['b' + str(l)] = np.zeros((layer_dims[l], 1))
+        ### END CODE HERE ###
+        
+        assert(parameters['w' + str(l)].shape == (layer_dims[l], layer_dims[l - 1]))
+        assert(parameters['b' + str(l)].shape == (layer_dims[l], 1))        
+    return parameters      
+
