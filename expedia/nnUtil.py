@@ -115,3 +115,16 @@ def initialize_parameters_deep(layer_dims):
         assert(parameters['b' + str(l)].shape == (layer_dims[l], 1))        
     return parameters      
 
+def normalize(x):
+    mean=np.mean(x,axis=0)
+    std=np.std(x,axis=0)
+    return (x-mean)/std
+
+def calcCovariance(x):
+    return np.cov(x.T)
+
+def calcEigen(cov):
+    return np.linalg.eig(cov)
+
+def getReducedMatrix(x,k,eigen):
+    return x.dot(eigen[:,0:k])    
