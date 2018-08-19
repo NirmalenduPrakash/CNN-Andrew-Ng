@@ -16,13 +16,13 @@ def linearActivationForward(z,activation):
 def forwardPropWithL2(X,y,parameters,layer_dims,lambd):
     A={'0':X}
     z={}
-    for l in range(0,len(layer_dims)):
+    for l in range(0,len(layer_dims)-1):
         z.update({str(l+1):linearForward(A[str(l)],parameters['w'+str(l+1)],parameters['b'+str(l+1)])})
-        if(l==len(layer_dims-1)):
+        if(l==len(layer_dims)-2):
             A.update({str(l+1):linearActivationForward(z[str(l+1)],"Sigmoid")})
-        else:    
-            A.update({str(l+1):linearActivationForward(z[str(l+1)],"Relu")})
             cost=computeCost(A[str(l+1)],y,parameters,lambd,layer_dims)
+        else:    
+            A.update({str(l+1):linearActivationForward(z[str(l+1)],"Relu")})            
     return A,z,cost
 
 def backwardPropWithL2(A,z,y,parameters,lambd,layer_dims):
@@ -30,20 +30,20 @@ def backwardPropWithL2(A,z,y,parameters,lambd,layer_dims):
     dw={}
     db={}
     da={}
-    daL=(-y/A[len(A)-1])+(1-y)/(1-A[len(A)-1])   
-    for l in range(reversed(len(layer_dims))):
-        if(l==len(layer_dims)):
-            dz[str(l)]=sigmoidBackward(daL,z[l])
+    daL=(-y/A[str(len(A)-1)])+(1-y)/(1-A[str(len(A)-1)])   
+    for l in reversed(range(1,len(layer_dims))):
+        if(l==len(layer_dims)-1):
+            dz[str(l)]=sigmoidBackward(daL,z[str(l)])
         else:
-            dz[str(l)]=reluBackward(daL,z[l])    
-        dw[str(l)],db[str(l)],da[str(l-1)]=linearBackward(dz[str(len(layer_dims))],A[str(l-1)],parameters['w'+str(l)],lambd)
+            dz[str(l)]=reluBackward(A[str(l)],z[str(l)])    
+        dw[str(l)],db[str(l)],da[str(l-1)]=linearBackward(dz[str(l)],A[str(l-1)],parameters['w'+str(l)],lambd)
     return dw,db    
 
 def computeCost(AL,Y,parameters,lambd,layer_dims):
     m=Y.shape[0]
     cost=(-1/m)*np.sum(np.multiply(Y,np.log(AL))+np.multiply(1-Y,np.log(1-AL)))
-    for l in range(1,len(layer_dims+1)):
-        cost+=(lambd/2*m)*np.sum(np.square(parameters['w'+str(l)]))
+    for l in range(1,len(layer_dims)):
+        cost+=(lambd/(2*m))*np.sum(np.square(parameters['w'+str(l)]))
     cost=np.squeeze(cost)
     assert(cost.shape==())
     return cost
@@ -60,7 +60,7 @@ def sigmoidBackward(da,z):
 
 def linearBackward(dz,A_prev,w,lambd):
     m=A_prev.shape[0]
-    dw=(1/m)*np.dot(A_prev.T,dz)+(lambd/m)*w
+    dw=(1/m)*np.dot(A_prev.T,dz)+(lambd/m)*w.T
     db=(1/m)*np.sum(dz,axis=0,keepdims=True)
     da_prev=dz.dot(w)
     return dw,db,da_prev
@@ -68,8 +68,8 @@ def linearBackward(dz,A_prev,w,lambd):
 def updateParameters(parameters,grads,learning_rate):
     L=int(len(parameters)/2)
     for l in range(L):
-        parameters["w"+str(l+1)]=parameters["w"+str(l+1)]-learning_rate*grads["dw"+str(l+1)].T
-        parameters["b"+str(l+1)]=parameters["b"+str(l+1)]-learning_rate*grads["db"+str(l+1)].T 
+        parameters["w"+str(l+1)]=parameters["w"+str(l+1)]-learning_rate*grads["dw"][str(l+1)].T
+        parameters["b"+str(l+1)]=parameters["b"+str(l+1)]-learning_rate*grads["db"][str(l+1)].T 
     return parameters       
 
 def updateParams_L(parameters,grads,learning_rate):
@@ -98,7 +98,7 @@ def load_dataset():
     return train_set_x_orig, train_set_y_orig, test_set_x_orig, test_set_y_orig, classes
 
 def load_dataset_csv(file):
-    return pd.read_csv(file,dtype=object)
+    return pd.read_csv(file,dtype=float)
 
 def initialize_parameters_deep(layer_dims):    
     np.random.seed(3)

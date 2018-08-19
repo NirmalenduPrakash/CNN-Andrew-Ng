@@ -2,9 +2,8 @@ import numpy as np
 import csv
 from nnUtil import *
 from datetime import date 
-import batch_imputer_tf as imputer
-from batch_imputer import *
 from matplotlib import pyplot as plt
+
 
 # import data
 # destinations_data=load_dataset_csv('./expedia/destinations.csv')
@@ -65,15 +64,81 @@ from matplotlib import pyplot as plt
 file_paths=[]
 for i in range(0,753):
     file_paths.append('./expedia/train_'+str(i)+'.csv')
-file_paths.append('./expedia/crossval.csv')    
+# file_paths.append('./expedia/crossval.csv')    
+
+
 feature_cnt=9
-imp=imputer.batchMiceImputer(feature_cnt,file_paths)
+# imp=imputer.batchMiceImputer(feature_cnt,file_paths)
 # w,b,costs=imp.process()
 # plt.plot(range(len(costs)),costs)
 # plt.show()
 
 # update missing orig-destination distance in train and crossval files
-# imp.updateOrigDest()
+# imp.removeCorrelatedFeatures()
+
+
+layer_dims=[22,15,10,5,100]
+parameters=initialize_parameters_deep(layer_dims)
+lambd=1
+learning_rate=.1
+costs=[]
+for f in file_paths:
+    df=load_dataset_csv(f)
+    x=df.values[~np.any(np.isnan(df.values),axis=1),0:22]
+    x=normalize(x)
+    indices=df.values[~np.any(np.isnan(df.values),axis=1),23].astype(np.int)
+    y=np.zeros((x.shape[0],100))
+    for r in range(0,x.shape[0]):
+        y[r,indices[r]]=1
+    A,z,cost=forwardPropWithL2(x,y,parameters,layer_dims,lambd)
+    costs.append(cost)
+    dw,db=backwardPropWithL2(A,z,y,parameters,lambd,layer_dims)
+    grads={"dw":dw,"db":db}
+    parameters=updateParameters(parameters,grads,learning_rate)
+plt.plot(range(len(costs)),costs)
+
+# train set accuracy
+correct_cnt=0
+total=0
+for f in file_paths:
+    df=load_dataset_csv(f)
+    x=df.values[~np.any(np.isnan(df.values),axis=1),0:22]
+    x=normalize(x)
+    indices=df.values[~np.any(np.isnan(df.values),axis=1),23].astype(np.int)
+    y=np.zeros((x.shape[0],100))
+    for r in range(0,x.shape[0]):
+        y[r,indices[r]]=1
+    y_pred=forwardPropWithL2(x,y,parameters,layer_dims,lambd)
+    indices=np.max(y_pred,axis=1)
+    y_pred=np.zeros((x.shape[0],100))
+    for r in range(0,x.shape[0]):
+        y_pred[r,indices[r]]=1
+    correct_cnt+=np.sum(np.absolute(y_pred-y))
+    total+=x.shape[0]
+print (correct_cnt/total)
+df=load_dataset_csv('./expedia/crossval.csv')
+x=df.values[~np.any(np.isnan(df.values),axis=1),0:22]
+x=normalize(x)
+indices=df.values[~np.any(np.isnan(df.values),axis=1),23].astype(np.int)
+y=np.zeros((x.shape[0],100))
+for r in range(0,x.shape[0]):
+    y[r,indices[r]]=1
+y_pred=forwardPropWithL2(x,y,parameters,layer_dims,lambd)
+indices=np.max(y_pred,axis=1)
+y_pred=np.zeros((x.shape[0],100))
+for r in range(0,x.shape[0]):
+    y_pred[r,indices[r]]=1
+print (np.sum(np.absolute(y_pred-y))/x.shape[0])    
+
+
+
+
+
+
+
+
+
+
 
 
 

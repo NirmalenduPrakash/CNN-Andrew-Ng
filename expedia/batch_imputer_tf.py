@@ -3,6 +3,7 @@ import numpy as np
 from nnUtil import *
 import csv
 import math
+from sklearn import preprocessing
 
 class batchMiceImputer:
     def __init__(self,features_cnt,file_paths):
@@ -13,6 +14,19 @@ class batchMiceImputer:
         # self.w=tf.Variable(np.random.randn(features_cnt).reshape(-1,1),name="w")
         self.b=tf.Variable(0,dtype=tf.float64,name="b")
         self.files=file_paths
+
+    def removeCorrelatedFeatures(self):
+        for f in self.files:
+            df=load_dataset_csv(f)
+            df=pd.DataFrame(df.values[~np.any(np.isnan(df.values),axis=1)])
+            # corr_matrix=df.corr().abs()
+            # upper = corr_matrix.where(np.triu(np.ones(corr_matrix.shape), k=1).astype(np.bool))
+            # to_drop = [column for column in upper.columns if any(upper[column] > 0.95)]
+           
+            # std_scaler=preprocessing.StandardScaler()
+            # x_scaled=std_scaler.fit_transform(df)
+            # df=pd.DataFrame(x_scaled)
+            to_drop=df.var()
 
     # def update(self,files):
     #     y_model=tf.tensordot(normalize(self.x),self.w,1)+self.b
