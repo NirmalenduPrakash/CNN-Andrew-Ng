@@ -82,21 +82,22 @@ parameters=initialize_parameters_deep(layer_dims)
 lambd=1
 learning_rate=.1
 costs=[]
-for f in file_paths:
-    df=load_dataset_csv(f)
-    x=df.values[~np.any(np.isnan(df.values),axis=1),0:22]
-    x=normalize(x)
-    indices=df.values[~np.any(np.isnan(df.values),axis=1),23].astype(np.int)
-    y=np.zeros((x.shape[0],100))
-    for r in range(0,x.shape[0]):
-        y[r,indices[r]]=1
-    A,z,cost=forwardPropWithL2(x,y,parameters,layer_dims,lambd)
-    costs.append(cost)
-    dw,db=backwardPropWithL2(A,z,y,parameters,lambd,layer_dims)
-    grads={"dw":dw,"db":db}
-    parameters=updateParameters(parameters,grads,learning_rate)
+for i in range(4):
+    for f in file_paths:
+        df=load_dataset_csv(f)
+        x=df.values[~np.any(np.isnan(df.values),axis=1),0:22]
+        x=normalize(x)
+        indices=df.values[~np.any(np.isnan(df.values),axis=1),23].astype(np.int)
+        y=np.zeros((x.shape[0],100))
+        for r in range(0,x.shape[0]):
+            y[r,indices[r]]=1
+        A,z,cost=forwardPropWithL2(x,y,parameters,layer_dims,lambd)
+        costs.append(cost)
+        dw,db=backwardPropWithL2(A,z,y,parameters,lambd,layer_dims)
+        grads={"dw":dw,"db":db}
+        parameters=updateParameters(parameters,grads,learning_rate)
 plt.plot(range(len(costs)),costs)
-
+plt.show()
 # train set accuracy
 correct_cnt=0
 total=0
@@ -109,6 +110,7 @@ for f in file_paths:
     for r in range(0,x.shape[0]):
         y[r,indices[r]]=1
     y_pred=forwardPropWithL2(x,y,parameters,layer_dims,lambd)
+    y_pred=y_pred[0]["4"]
     indices=np.max(y_pred,axis=1)
     y_pred=np.zeros((x.shape[0],100))
     for r in range(0,x.shape[0]):
@@ -124,6 +126,7 @@ y=np.zeros((x.shape[0],100))
 for r in range(0,x.shape[0]):
     y[r,indices[r]]=1
 y_pred=forwardPropWithL2(x,y,parameters,layer_dims,lambd)
+y_pred=y_pred[0]["4"]
 indices=np.max(y_pred,axis=1)
 y_pred=np.zeros((x.shape[0],100))
 for r in range(0,x.shape[0]):
