@@ -1,11 +1,15 @@
 import numpy as np
 import math
+from decimal import Decimal
+
 def calculateCost(h,y):
     m=y.shape[0]
-    return (1/m)*np.sum(np.square(h-y))
+    return (1/2*m)*np.sum(np.square(h-y))
 
 def forwardProp(x,w,b):
     h=x.dot(w)+np.repeat(b,x.shape[0]).reshape(-1,1)
+    for i in range(0,h.shape[0]):
+        h[i,0]:Decimal(h[i,0])
     return h
 
 def backProp(h,y,x):

@@ -128,3 +128,5 @@ def calcEigen(cov):
 
 def getReducedMatrix(x,k,eigen):
     return x.dot(eigen[:,0:k])    
+
+    
